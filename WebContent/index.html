@@ -1,0 +1,263 @@
+<html>
+<head><title>assignment</title></head>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.10.2.js" type="text/javascript"></script>
+<script>
+
+// created and tload the table for first time
+var selectedUserArray = []; 
+$(document).ready(function(){
+	$.get('GetUser.jsp',{	
+	},function(response){
+		makeTable(response);
+	});
+})
+
+//this funnction is used to create the table
+function makeTable(json){
+	let dataArray=["uname","age","class","marks","address"];
+	document.getElementById("userTable").innerHTML = "";
+	JSON.parse(json).map(function(item, rindex){
+		var element = document.getElementById("userTable").insertRow(0);
+		var cb = document.createElement("input");
+		cb.type = "checkbox";
+		cb.value = item["ID"];
+		if(selectedUserArray.indexOf(item["ID"]) > -1){
+			cb.setAttribute("checked","true");
+		}
+		cb.addEventListener("click",function(){addElement(item["ID"]);});
+		var cell = element.insertCell(0);
+		cell.appendChild(cb);
+		var length = 1;
+		dataArray.map(function(key,index){
+			var cell = element.insertCell(index+1);
+			cell.innerHTML = item[key];
+			length ++;
+		});
+		var btn = document.createElement("button");
+		btn.setAttribute("class","btn btn-danger");
+		btn.setAttribute("style","margin-right: 20px");
+		btn.addEventListener("click",function(){deleteUser(item["ID"],rindex);})
+		btn.innerHTML = "delete";
+		var updBtn = document.createElement("button");
+		updBtn.setAttribute("class", "btn btn-primary");
+		updBtn.setAttribute("data-toggle","modal");
+		updBtn.setAttribute("data-target","#myModal");
+		updBtn.addEventListener("click", function(){openUpdateModal(item);})
+		updBtn.innerHTML = "update";
+		var cell = element.insertCell(length);
+		cell.appendChild(btn);
+		cell.appendChild(updBtn);
+	});
+}
+
+// function to addElement in checkbox
+function addElement(value){
+	if(selectedUserArray.indexOf(value) > -1){
+		var index = selectedUserArray.indexOf(value);
+		var size = selectedUserArray.length;
+		selectedUserArray = selectedUserArray.slice(0,index).concat(selectedUserArray.slice(index+1,size));
+	}else{
+		selectedUserArray.push(value);	
+	}
+}
+
+//function to delete a user
+function deleteUser(userId,rowNum){
+	if(selectedUserArray.indexOf(userId) > -1){
+		//ajax request to the delete the user
+		$.get('DeleteUser.jsp?userID='+userId,{	
+		},function(response){
+			var res = JSON.parse(response);
+			if(res.isDeleted === 1){
+				$.get('GetUser.jsp',{	
+				},function(response){
+					makeTable(response);
+					
+				});
+			}else{
+				alert("unable to delete the user");
+			}
+		});
+	}
+}
+
+//function to add new user
+function saveUser(){
+	let name = document.getElementById("name").value;
+	let age =  document.getElementById("age").value;
+	let userClass =  document.getElementById("class").value;
+	let marks =  document.getElementById("marks").value;
+	let address =  document.getElementById("address").value;
+	$.post('CreateUser.jsp',{	
+			name:name,
+			age:age,
+			userClass:userClass,
+			marks:marks,
+			address:address
+	},function(response){
+		if(JSON.parse(response).isInserted === 1){
+			$.get('GetUser.jsp',{	
+			},function(response){
+				makeTable(response);
+				document.getElementById("name").value = "";
+				document.getElementById("age").value = "";
+				document.getElementById("class").value = "";
+				document.getElementById("marks").value = "";
+				document.getElementById("address").value = "";
+			});
+		}else{
+			alert("unable to insert record")
+		}
+	});
+	return false;
+}
+//function open update modal
+function openUpdateModal(item){
+	document.getElementById("uid").value = item.ID;
+	document.getElementById("uname").value = item.uname;
+	document.getElementById("uage").value = item.age;
+	document.getElementById("uclass").value = item.class;
+	document.getElementById("umarks").value = item.marks;
+	document.getElementById("uaddress").value = item.address;
+}
+//function to update the user in the database
+function updateUser(){
+	let name = document.getElementById("uname").value;
+	let age =  document.getElementById("uage").value;
+	let userClass =  document.getElementById("uclass").value;
+	let marks =  document.getElementById("umarks").value;
+	let address =  document.getElementById("uaddress").value;
+	let id = document.getElementById("uid").value;
+	$.post('UpdateUser.jsp',{	
+			name:name,
+			age:age,
+			userClass:userClass,
+			marks:marks,
+			address:address,
+			id:id
+	},function(response){
+		if(JSON.parse(response).isUpdated === 1){
+			$.get('GetUser.jsp',{	
+			},function(response){
+				makeTable(response);
+			});
+		}else{
+			alert("unable to update record")
+		}
+	});
+	return true;
+}
+</script>
+<body>
+<div class="container">
+<div style="margin:20px">
+<form class="form-inline" onsubmit="return saveUser()" id="userForm">
+	<table class="table table-bordered">
+		<tr>
+			<td>
+				<div class="form-group">
+					<label for="name">Name:</label>
+			    	<input type="text" class="form-control" id="name" required="required">
+				</div>
+			</td>
+			<td>
+				<div class="form-group">
+					<label for="age">Age:</label>
+			    	<input type="number" class="form-control" id="age" required="required">
+				</div>
+			</td>
+			<td>
+				<div class="form-group">
+					<label for="class">Class:</label>
+			    	<input type="text" class="form-control" id="class" required="required">
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<div class="form-group">
+					<label for="marks">Marks:</label>
+			    	<input type="number" class="form-control" id="marks" required="required">
+				</div>
+			</td>
+			<td>
+				<div class="form-group">
+					<label for="address">Address:</label>
+			    	<input type="text" class="form-control" id="address" required="required">
+				</div>
+			</td>
+			<td>
+				<button type="submit" class="btn btn-success" style="margin-left: 120px">Add User</button>
+			</td>
+		</tr>
+	</table>
+</form>
+</div>
+<div class="col-sm-offset-2 col-sm-8">
+<table class="table table-bordered">
+<thead>
+<th></th>
+<th>Name</th>
+<th>Age</th>
+<th>class</th>
+<th>marks</th>
+<th>address</th>
+<th></th>
+</thead>
+<tbody id="userTable"></tbody>
+</table>
+</div>
+</div>
+
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Update User</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form" id="userForm">
+        		<input type="hidden" id="uid" />
+				<div class="form-group">
+					<label for="name">Name:</label>
+			    	<input type="text" class="form-control" id="uname" required="required">
+				</div>
+
+				<div class="form-group">
+					<label for="age">Age:</label>
+			    	<input type="number" class="form-control" id="uage" required="required">
+				</div>
+
+				<div class="form-group">
+					<label for="class">Class:</label>
+			    	<input type="text" class="form-control" id="uclass" required="required">
+				</div>
+
+				<div class="form-group">
+					<label for="marks">Marks:</label>
+			    	<input type="number" class="form-control" id="umarks" required="required">
+				</div>
+				<div class="form-group">
+					<label for="address">Address:</label>
+			    	<input type="text" class="form-control" id="uaddress" required="required">
+				</div>
+				<button type="submit" class="btn btn-primary" data-dismiss="modal" onclick="updateUser()">Update User</button>
+		</form>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
